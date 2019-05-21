@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>订座</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission.js"></script>
+<style>
+body{
+	background-color:#f2f2f2;
+}
+.layui-upload{
+	width: 200px;
+    margin: auto;
+}
+.layui-upload-img{
+	width:100%;
+}
+#carousel>div>div{
+	background-size:100% 100%;
+	background-repeat:no-repeat;
+	position:relative;
+}
+.carousel-item{
+    position: absolute;
+    bottom: 30%;
+    left: 25%;
+    color:white;
+}
+.carousel-item>span{
+	background-color:#ff6d00;
+	padding:4px;
+	display:inline-block;
+}
+.carousel-item>h1{
+	font-size:40px;
+}
+.movieList{
+    display: flex;
+    flex-flow: wrap;
+    justify-content: space-evenly;
+}
+.movieList .movieItem{
+	flex-basis:400px;
+    margin: 20px 100px;
+    border-color: #c49e9e;
+    border-style: solid;
+    background-color: #e7e2e2;
+}
+.head-title{
+    border-left: 10px solid #ff6d00;
+    padding: 20px;
+    background-color: #dddddd;
+    margin:0;
+}
+.movieItem .a{
+	display:flex;
+}
+.movieItem .a .b{
+	flex:auto;
+	flex-basis:150px;
+}
+.movieItem .a .c{
+	flex:auto;
+	flex-basis:250px;
+}
+.movieItem img{
+	width:100%;
+}
+</style>
+</head>
+<body>
+<ul class="layui-nav" lay-filter="test">
+	<li class="layui-nav-item"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<div class="layui-carousel" id="carousel">
+		<div carousel-item>
+		    <div style="background-image:url(/bookTicket/img/海王.jpg)">
+		    	<div class="carousel-item">
+		    		<span>正在热映</span>
+		    		<h1>《海王》</h1>
+		    	</div>
+		    </div>
+		    <div style="background-image:url(/bookTicket/img/蜘蛛侠.jpg)">
+		       	<div class="carousel-item">
+		    		<span>正在热映</span>
+		    		<h1>《蜘蛛侠：平行宇宙》</h1>
+		    	</div>
+		    </div>
+		</div>
+	</div>
+	<h1 class="head-title">正在热映影片</h1>
+	<div class="movieList"></div>
+</div>
+<div class="movieItem" id="movieItemTemp" style="display:none">
+	<div class="a">
+		<div class="b">
+			<img src="http://img5.mtime.cn/mt/2018/12/11/103751.83931661_100X140X4.jpg">
+		</div>
+		<div class="c">
+			<h1 class="movie-title">来电狂响</h1>
+			<p class="movie-attr">103分钟-喜剧</p>
+			<p class="intro">手机成危机 饭局变战局</p>
+		</div>
+	</div>
+</div>
+<script src="/bookTicket/layui/layui.all.js"></script>
+<script>
+	$(function(){
+		let movies=null;
+		layui.use("carousel",function(){
+			layui.carousel.render({
+			   elem: '#carousel'
+			   ,width: '100%' //设置容器宽度
+			   ,height:"390px"
+			   ,arrow: 'always' //始终显示箭头
+			});
+		});
+ 		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		}) ;
+		//获得可用电影
+		$.get("/bookTicket/customer/get/availableMovies",function(data){
+			movies=data;
+			for(let value of data){
+				let movie=$("#movieItemTemp").clone().attr("id",null).css("display","block");
+				movie.find("img").attr("src","/bookTicket/admin/download/"+value.image);
+				movie.find(".movie-title").text(value.name);
+				movie.find(".movie-attr").text(value.duration+"分钟-"+value.kind);
+				movie.find(".intro").text(value.introduction);
+				movie.appendTo(".movieList");
+			}
+			//注册点击事件
+			$(".movieItem").click(function(event){
+				for(let value of movies){
+					let movieTitle=$(this).find(".movie-title");
+					if(movieTitle.text()===value.name){
+						sessionStorage.setItem("movieID",value.id);
+						location.assign("seat.html");
+						break;
+					}
+				} 
+			});
+		});
+	})
+</script>
+</body>
+</html>

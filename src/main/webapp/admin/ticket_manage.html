@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>后台管理系统</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission-admin.js"></script>
+<script>
+	$(function(){
+		layui.use(["element","table","laydate","form"],function(){
+			//渲染表格
+			let tableIns=layui.table.render({
+				elem:"#ticketTable",
+				url:"/bookTicket/admin/get/ticket",
+				parseData:function(res){
+					for(let i=0;i<res.length;i++){
+						res[i].position="第"+res[i].row+"行，第"+res[i].column+"列";
+					}
+					return {
+						"code":0,
+						"msg":"ok",
+						"count":100,
+						"data":res
+					};
+				},
+				height:400,
+				page:true,
+				//toolbar:"#barDemo2",
+				cols:[[
+					{field:"id",title:"ID",sort:true,fixed:"left"},
+					{field:"roomID",title:"房号"},
+					{field:"movieID",title:"电影号"},
+					{field:"customerID",title:"顾客号"},
+					{field:"position",title:"位置"},
+					{field:"price",title:"价格"},
+					{field:"playTime",title:"放映时间",width:200},
+					{field:"purchaseTime",title:"购买时间",width:200},
+					{fixed:"right",toolbar:"#barDemo"}
+				]]
+			});
+			//监听单选框
+			layui.form.on("radio(filter)",function(data){
+				  /* console.log(data.elem); //得到radio原始DOM对象
+				  console.log(data.value); //被点击的radio的value值 */
+				  switch(data.value){
+				  case "正常模式":{
+					  tableIns.reload({
+							url:"/bookTicket/admin/get/ticket",
+							parseData:function(res){
+								for(let i=0;i<res.length;i++){
+									res[i].position="第"+res[i].row+"行，第"+res[i].column+"列";
+								}
+								return {
+									"code":0,
+									"msg":"ok",
+									"count":100,
+									"data":res
+								};
+							},
+							cols:[[
+								{field:"id",title:"ID",sort:true,fixed:"left"},
+								{field:"roomID",title:"房号"},
+								{field:"movieID",title:"电影号"},
+								{field:"customerID",title:"顾客号"},
+								{field:"position",title:"位置"},
+								{field:"price",title:"价格"},
+								{field:"playTime",title:"放映时间",width:200},
+								{field:"purchaseTime",title:"购买时间",width:200},
+								{fixed:"right",toolbar:"#barDemo"}
+							]]
+					  });
+					  break;
+				  }
+				  case "增加模式":{
+					  tableIns.reload({
+							url:"/bookTicket/admin/get/ticket2",
+							parseData:function(res){
+								return {
+									"code":0,
+									"msg":"ok",
+									"count":100,
+									"data":res
+								};
+							},
+							cols:[[
+								{field:"roomID",title:"房号",sort:true},
+								{field:"movieID",title:"电影号",sort:true},
+								{field:"price",title:"价格"},
+								{field:"playTime",title:"放映时间",width:200,sort:true},
+								{field:"row",title:"已售"},
+								{field:"column",title:"总票"},
+								{fixed:"right",toolbar:"#barDemo"}
+							]]
+					  });
+					  break;
+				  }
+				  }
+			});
+			//添加头工具add事件
+			$("#add").click(function(event){
+				let movie,room,playtime,price;
+				let endFlag=false;
+				//打开影片窗口，选择影片--------------------------------------
+				let index=layui.layer.open({
+					type:1,
+					title:"请选择影片",
+					offset:['200px','300px'],
+					end:openRoom,
+					cancel:function(){endFlag=true;},
+					content:"<table id='movieTable' lay-filter='movieTable'></table>"
+				});
+				//渲染
+				layui.table.render({
+					elem:"#movieTable",
+					url:"/bookTicket/admin/get/movie",
+					parseData:function(res){
+						return {
+							"code":0,
+							"msg":"ok",
+							"count":100,
+							"data":res
+						};
+					},
+					height:400,
+					page:true,
+					width:1000,
+					cols:[[
+						{field:"id",title:"ID",sort:true,fixed:"left"},
+						{field:"name",title:"影名"},
+						{field:"kind",title:"类型"},
+						{field:"duration",title:"时长"},
+						{field:"introduction",title:"介绍",width:100},
+					]]
+				});
+				//监听单击事件
+				layui.table.on("row(movieTable)",function(obj){
+					movie=obj.data
+					//layui.layer.closeAll();
+					layui.layer.close(index);
+				});
+				//打开房间窗口，选择房间----------------------------------
+				function openRoom(){
+					if(!endFlag){
+						index=layui.layer.open({
+							type:1,
+							title:"请选择房间",
+							offset:['200px','300px'],
+							end:openDate,
+							cancel:function(){endFlag=true;},
+							content:"<table id='roomTable' lay-filter='roomTable'></table>"
+						});
+						//渲染
+						layui.table.render({
+							elem:"#roomTable",
+							url:"/bookTicket/admin/get/room",
+							parseData:function(res){
+								return {
+									"code":0,
+									"msg":"ok",
+									"count":100,
+									"data":res
+								};
+							},
+							height:400,
+							page:true,
+							width:1000,
+							cols:[[
+								{field:"id",title:"ID",sort:true,fixed:"left"},
+								{field:"row",title:"行数"},
+								{field:"column",title:"列数"}
+							]]
+						});
+						//监听单击事件
+						layui.table.on("row(roomTable)",function(obj){
+							room=obj.data
+							layui.layer.close(index);
+						});	
+					}
+				}
+				//打开时间窗口，选择反映时间---------------------------
+				function openDate(){
+					if(!endFlag){
+						index=layui.layer.open({
+							type:1,
+							title:"选择日期",
+							content:"<input type='text' class='layui-input' id='selectDate' placeholder='请选择放映日期'>"+
+									"<input type='text' class='layui-input' id='selectPrice' placeholder='请输入价格'>",
+							btn:"确定",
+							yes:function(index,layero){
+								playtime=$("#selectDate").val();
+								price=$("#selectPrice").val();
+								if(price.match(/^\d+(\.\d+)?$/)==null){
+									return false;
+								}
+								layui.layer.close(index);
+							},
+							end:produceTicket
+						});
+						//渲染日期
+						layui.laydate.render({
+							elem:"#selectDate",
+							type:"datetime"
+						})
+					}
+				}
+				//生成影票---------------------------------------------
+				function produceTicket(){
+					if(movie!=null && room!=null && playtime!=null && price!=null){
+							let obj={
+							roomID:room.id,
+							movieID:movie.id,
+							price:price,
+							row:room.row,
+							column:room.column,
+							playTime:playtime
+						}
+							$.post("/bookTicket/admin/add/ticket2",obj,function(){
+								location.reload();
+							});
+					}
+				}
+			});
+			//添加头工具find事件
+			$("#find").click(function(event){
+				layui.layer.msg("这个功能不写了哈");
+			});
+			//监听行工具事件
+			layui.table.on("tool(ticketTable)",function(obj){
+				let data=obj.data;
+				if(obj.event==="delete"){
+					if($("input[name='tableMode']:checked").val()==="增加模式"){
+						//layui.layer.msg("删除");
+						$.get("/bookTicket/admin/delete/ticket2/"+data.roomID,function(){
+							location.reload();
+						});
+					}
+				}
+			});
+		});
+		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		})
+	})
+</script>
+<style>
+.layui-nav-side{
+	top:60px;
+}
+.content{
+	margin:20px 20px 20px 220px;
+}
+</style>
+</head>
+<body>
+<ul class="layui-nav">
+	<li class="layui-nav-item"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<ul class="layui-nav layui-nav-tree layui-nav-side layui-bg-cyan">
+		<li class="layui-nav-item"><a href="customer_manage.html">客户管理</a></li>
+		<li class="layui-nav-item"><a href="movie_manage.html">影片管理</a></li>
+		<li class="layui-nav-item"><a href="room_manage.html">房间管理</a></li>
+		<li class="layui-nav-item layui-this"><a href="ticket_manage.html">影票管理</a></li>
+	</ul>
+	<div class="content">
+		<div class="headTool">
+			<a class="layui-btn layui-btn-radius layui-btn-warm" id="add"><i class="layui-icon layui-icon-add-1"></i></a>
+			<a class="layui-btn layui-btn-radius layui-btn-warm" id="find"><i class="layui-icon layui-icon-search"></i></a>
+			<div class="layui-form" style="display:inline-block">
+				<input type="radio" lay-filter="filter" name="tableMode" value="正常模式" title="正常模式" checked>
+				<input type="radio" lay-filter="filter" name="tableMode" value="增加模式" title="增加模式">
+			</div>
+		</div>
+		<table id="ticketTable" lay-filter="ticketTable"></table>
+	</div>
+</div>
+
+
+
+<script type="text/html" id="barDemo">
+	<a class="layui-btn layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></a>
+	<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete"><i class="layui-icon layui-icon-delete"></i></a>
+</script>
+<script src="/bookTicket/layui/layui.js"></script>
+</body>
+</html>

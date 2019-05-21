@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>首页</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission.js"></script>
+<script>
+	$(function(){
+		layui.use("element");
+ 		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		}) 
+	})
+</script>
+<style>
+.content{
+	text-align:center;
+}
+</style>
+</head>
+<body>
+<ul class="layui-nav" lay-filter="test">
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order">订座</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<div class="content">
+		<h1>无敌电影院</h1>
+		<p>你想看的，这里就有；你不想看的，这里仍有！！！</p>
+	</div>
+</div>
+
+<script src="/bookTicket/layui/layui.js"></script>
+</body>
+</html>

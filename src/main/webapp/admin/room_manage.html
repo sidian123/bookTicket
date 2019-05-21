@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>房间管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission-admin.js"></script>
+<script>
+	$(function(){
+		layui.use(["element","table","laydate","form"],function(){
+			//渲染表格
+			layui.table.render({
+				elem:"#roomTable",
+				url:"/bookTicket/admin/get/room",
+				parseData:function(res){
+					return {
+						"code":0,
+						"msg":"ok",
+						"count":100,
+						"data":res
+					};
+				},
+				height:400,
+				page:true,
+				toolbar:"#barDemo2",
+				cols:[[
+					{field:"id",title:"ID",sort:true,fixed:"left"},
+					{field:"row",title:"行数"},
+					{field:"column",title:"列数"},
+					{fixed:"right",toolbar:"#barDemo"}
+				]]
+			});
+			//监听行工具事件
+			layui.table.on("tool(roomTable)",function(obj){
+				let data=obj.data;
+				if(obj.event==="edit"){
+					//打开编辑窗口
+					let index=layer.open({
+						type:1,
+						title:"修改房间",
+						content:$("#addRoomForm")
+					});
+					//初始化值
+ 					layui.form.val("addRoomForm",{
+						row:data.row,
+						column:data.column
+					}); 
+					//监听表单提交事件
+					layui.form.on("submit(formDemo)",function(data2){
+					    data2.field.id=data.id;
+					    $.post("/bookTicket/admin/update/room",data2.field,function(){
+					    	location.reload();
+					    });
+					    layui.layer.close(index);
+						return false;
+					});
+				}else if(obj.event==="delete"){
+					$.get("/bookTicket/admin/delete/room/"+obj.data.id,function(){
+						location.reload();
+					});
+				}
+			});
+			//监听头工具栏事件
+			layui.table.on("toolbar(roomTable)",function(obj){
+				switch(obj.event){
+				case 'add':
+					//打开添加窗口
+					let index=layer.open({
+						type:1,
+						title:"添加房间",
+						content:$("#addRoomForm")
+					});
+					//初始化
+					$("#addRoomForm button[type='reset']").click()
+					//监听表单提交事件
+					layui.form.on("submit(formDemo)",function(data){
+						$.post("/bookTicket/admin/add/room",data.field,function(){
+							location.reload();
+						});
+						return false;
+					});
+					break;
+				case 'find':
+					let index2=layui.layer.prompt(function(value){
+						//查找电影
+						if(value.match(/^\d+$/)!=null){
+							layui.layer.close(index2);
+							$.get("/bookTicket/admin/get/room/"+value,function(data){
+								if(data!=""){
+									let index3=layui.layer.open({
+										type:1,
+										title:"查看房间",
+										content:$("#addRoomForm"),
+										end:function(){//将隐藏的按钮显示出来。。。。
+											$("#addRoomForm button").css("display","inline-block");
+										}
+									})
+									//初始化
+				 					layui.form.val("addRoomForm",{
+				 						row:data.row,
+										column:data.column
+									}); 
+									//隐藏提交重置表单..
+									$("#addRoomForm button").css("display","none");	
+								}
+							});
+						}
+					});
+					break;
+				}
+			});
+		});
+		//用户登出
+		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		})
+	})
+</script>
+<style>
+.layui-nav-side{
+	top:60px;
+}
+.content{
+	margin:20px 20px 20px 220px;
+}
+#addRoomForm{
+	padding:20px;
+} 
+</style>
+</head>
+<body>
+<ul class="layui-nav">
+	<li class="layui-nav-item"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<ul class="layui-nav layui-nav-tree layui-nav-side layui-bg-cyan">
+		<li class="layui-nav-item"><a href="customer_manage.html">客户管理</a></li>
+		<li class="layui-nav-item"><a href="movie_manage.html">影片管理</a></li>
+		<li class="layui-nav-item layui-this"><a href="room_manage.html">房间管理</a></li>
+		<li class="layui-nav-item"><a href="ticket_manage.html">影票管理</a></li>
+	</ul>
+	<div class="content">
+		<table id="roomTable" lay-filter="roomTable"></table>
+	</div>
+</div>
+
+
+<form id="addRoomForm" lay-filter="addRoomForm" class="layui-form" style="display:none">
+	<div class="layui-form-item">
+		<label class="layui-form-label">行数</label>
+		<div class="layui-input-block">
+			<input type="number" name="row" class="layui-input">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">列数</label>
+		<div class="layui-input-block">
+			<input type="number" name="column" class="layui-input">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<div class="layui-input-block">
+			<button class="layui-btn" lay-submit lay-filter="formDemo">提交</button>
+      		<button type="reset" class="layui-btn">重置</button>
+		</div>
+	</div>
+</form>
+
+<script type="text/html" id="barDemo">
+	<a class="layui-btn layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></a>
+	<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete"><i class="layui-icon layui-icon-delete"></i></a>
+</script>
+<script type="text/html" id="barDemo2">
+	<a class="layui-btn layui-btn-radius layui-btn-warm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i></a>
+	<a class="layui-btn layui-btn-radius layui-btn-warm" lay-event="find"><i class="layui-icon layui-icon-search"></i></a>
+</script>
+<script src="/bookTicket/layui/layui.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>模板页</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<style>
+.layui-upload{
+	width: 200px;
+    margin: auto;
+}
+.layui-upload-img{
+	width:100%;
+}
+</style>
+</head>
+<body>
+<ul class="layui-nav" lay-filter="test">
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="javascript:void(0)">个人信息</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+
+
+<script src="/bookTicket/layui/layui.all.js"></script>
+<script>
+	$(function(){
+		layui.use("upload",function(){
+			
+		});
+ 		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		}) 
+	})
+</script>
+</body>
+</html>

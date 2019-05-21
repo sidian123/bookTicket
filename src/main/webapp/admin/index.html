@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>后台管理系统</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission-admin.js"></script>
+<script>
+	$(function(){
+		layui.use("element");
+		$.getJSON("/bookTicket/get/user",function(data){
+			if(data!=null){
+				$("#profile").text("欢迎"+data.name);
+			}
+		});
+		//获得销售额
+		$.getJSON("/bookTicket/admin/get/price/day",function(data){
+			let aaa="今日收入："+data+"元<br>";
+			$.getJSON("/bookTicket/admin/get/price/month",function(data){
+				aaa+="该月收入:"+data+"元<br>";
+				$.getJSON("/bookTicket/admin/get/price/quarter",function(data){
+					aaa+="该季度收入："+data+"元";
+					$(".content").append($("<p>"+aaa+"</p>"));
+				});
+			});
+		});
+		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		})
+	})
+</script>
+<style>
+.layui-nav-side{
+	top:60px;
+}
+.content{
+	margin:20px 20px 20px 220px;
+}
+</style>
+</head>
+<body>
+<ul class="layui-nav">
+	<li class="layui-nav-item"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<ul class="layui-nav layui-nav-tree layui-nav-side layui-bg-cyan">
+		<li class="layui-nav-item"><a href="customer_manage.html">客户管理</a></li>
+		<li class="layui-nav-item"><a href="movie_manage.html">影片管理</a></li>
+		<li class="layui-nav-item"><a href="room_manage.html">房间管理</a></li>
+		<li class="layui-nav-item"><a href="ticket_manage.html">影票管理</a></li>
+	</ul>
+	<div class="content">
+		<div id="profile"></div>
+	</div>
+</div>
+
+
+
+<script src="/bookTicket/layui/layui.js"></script>
+</body>
+</html>

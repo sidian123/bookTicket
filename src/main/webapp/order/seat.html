@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>选座</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission.js"></script>
+<style>
+body{
+    background-color: #f0f0f0;
+}
+.layui-upload{
+	width: 200px;
+    margin: auto;
+}
+.layui-upload-img{
+	width:100%;
+}
+.room-row img{
+	width: 40px;
+    height: 40px;
+    display: inline-block;
+    margin: 5px;
+    flex: auto;
+}
+.room-row{
+    display: flex;
+}
+.room{
+    border-style: solid;
+    border-color: gray;
+    background-color: white;
+}
+.room-wrapper{
+	min-width: 50%;
+    width: 800px;
+    max-width: 80%;
+    margin: 15px auto;
+}
+.room-wrapper .roomID{
+	text-align:center;
+}
+.footer{
+	text-align:center;
+}
+</style>
+</head>
+<body>
+<ul class="layui-nav" lay-filter="test">
+	<li class="layui-nav-item"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<div class="content">
+	</div>
+	<div class="footer">
+		<button class="layui-btn layui-btn-radius layui-btn-warm" id="submit">确定</button>
+	</div>
+</div>
+
+<script src="/bookTicket/layui/layui.all.js"></script>
+<script>
+	$(function(){
+		let selectedSeats=[];//被选中座位的集合
+		let user;
+		//引入layui模块
+		layui.use("layer");
+		//进入该界面必须选择房间
+		let movieID=sessionStorage.getItem("movieID");
+		if(movieID==undefined){
+			location.replace("index.html");
+		}
+		//获得用户信息
+		$.get("/bookTicket/get/user",function(data){
+			user=data;
+			if(data==null|| data===""){//如果用户没有登录
+				location.replace("/bookTicket/login.html");
+			}
+		});
+		//登出
+ 		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		}) 
+		//获得电影即将要放映的房间信息
+		$.get("/bookTicket/customer/get/room_of_movie/"+movieID,function(data){
+			for(let room of data){
+				//生成room
+				createRoom(room.row,room.column,room.id,room.playTime,room.price);
+				//获得已售座位
+				$.get("/bookTicket/customer/get/seats_of_room_in_time",{
+						roomID:room.id,
+						movieID:movieID,
+						playTime:room.playTime
+					},
+					function(data){
+						for(let value of data){
+							let selector=".room-row img[row='"+value.row+"'][column='"+value.column+"']";
+							$(".room[roomID='"+room.id+"'][playTime='"+room.playTime+"']").find(selector).attr("sold","true").attr("src","/bookTicket/img/error.svg");
+							
+							//let selector=".room-row img[row='"+value.row+"'][column='"+value.column+"']";
+							//$(selector).attr("sold","true").attr("src","/bookTicket/img/error.svg");
+						}
+					}
+				);
+			}
+			//注册事件
+			$(".room-row img").click(function(event){
+				if($(this).attr("sold")==undefined){//如果没有被出售
+					let obj={};
+					obj.roomID=$(this).parent().parent().attr("roomID");
+					obj.row=$(this).attr("row");
+					obj.column=$(this).attr("column");
+					obj.playTime=$(this).parent().parent().attr("playTime");
+					
+					let flag=false;//是否已被选中
+					for(let i=0;i<selectedSeats.length;i++){
+						let value=selectedSeats[i];
+						//如果已被选中
+						if(value.roomID===obj.roomID && value.row===obj.row && value.column===obj.column && value.playTime===obj.playTime){
+							selectedSeats.splice(i,1);
+							$(this).attr("src","/bookTicket/img/seat.svg");
+							flag=true;
+							break;
+						}
+					}
+					if(!flag){//未被选中
+						//最多选4个
+						if(selectedSeats.length<4){
+							$(this).attr("src","/bookTicket/img/ok.svg");
+							selectedSeats.push(obj);							
+						}else{
+							layui.layer.msg("最多只能选购4张");
+						}
+					}	
+				}
+			});
+		});
+		//注册提交事件
+		$("#submit").click(function(event){
+			//计算总额
+			let total=0;
+			for(let value of selectedSeats){
+				total+=parseFloat($(".room[roomID='"+value.roomID+"'][playTime='"+value.playTime+"']").attr("price"));
+			}
+			
+			layui.layer.open({
+				  title:"是否支付",
+				  btn:["确认","取消"],
+				  content:"一共"+total+"元，是否支付",
+				  yes:function(){
+						//一张一张票购买
+						for(let value of selectedSeats){
+							value.movieID=movieID;
+							value.customerID=user.id;
+							$.post("/bookTicket/customer/update/ticket",value);
+							layui.layer.closeAll();
+							location.assign("/bookTicket/order/order_detail.html");
+						}
+				  }
+			})
+		});
+	})
+	//生成room
+	function createRoom(row,column,roomID,playTime,price){
+		let room=$("<div class='room' roomID='"+roomID+"' playTime='"+playTime+"' price='"+price+"'></div>");
+		for(let i=1;i<=row;i++){
+			let tds="";
+			for(let j=1;j<=column;j++){
+				tds+="<img src='/bookTicket/img/seat.svg' row='"+i+"' column='"+j+"'>";
+			}
+			let tr="<div class='room-row'>"+tds+"</div>";
+			$(tr).appendTo(room);
+		}
+		let wrapper=$("<div class='room-wrapper'></div>");
+		wrapper.append("<h1 class='roomID'>"+roomID+"号房</h1>");
+		wrapper.append("<p class='playTime'>"+playTime+"上映，只要"+price+"元</p>");
+		wrapper.append(room);
+		$(".content").append(wrapper);
+	}
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>客户管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission-admin.js"></script>
+<script>
+	$(function(){
+		layui.use(["element","table","laydate","form"],function(){
+			//渲染表格
+			layui.table.render({
+				elem:"#customerTable",
+				url:"/bookTicket/admin/get/customer",
+				parseData:function(res){
+					return {
+						"code":0,
+						"msg":"ok",
+						"count":100,
+						"data":res
+					};
+				},
+				height:400,
+				page:true,
+				toolbar:"#barDemo2",
+				cols:[[
+					{field:"id",title:"ID",sort:true,fixed:"left"},
+					{field:"name",title:"姓名"},
+					{field:"password",title:"密码"},
+					{field:"sex",title:"性别"},
+					{field:"birthday",title:"生日",sort:true},
+					{field:"phone",title:"电话号码"},
+					{field:"email",title:"电子邮箱"},
+					{fixed:"right",toolbar:"#barDemo"}
+				]]
+			});
+			//渲染日期
+			layui.laydate.render({
+				elem:"#birthday"
+			});
+			//监听行工具事件
+			layui.table.on("tool(customerTable)",function(obj){
+				let data=obj.data;
+				if(obj.event==="edit"){
+					//打开编辑窗口
+					let index=layer.open({
+						type:1,
+						title:"修改客户",
+						content:$("#addCustomerForm")
+					});
+					//初始化值
+ 					layui.form.val("addCustomerForm",{
+						name:data.name,
+						password:data.password,
+						sex:data.sex,
+						birthday:data.birthday,
+						phone:data.phone,
+						email:data.email
+					}); 
+					//监听表单提交事件
+					layui.form.on("submit(formDemo)",function(data2){
+					    data2.field.id=data.id;
+					    $.post("/bookTicket/admin/update/customer",data2.field,function(){
+					    	location.reload();
+					    });
+					    layui.layer.close(index);
+						return false;
+					});
+				}else if(obj.event==="delete"){
+					$.get("/bookTicket/admin/delete/customer/"+obj.data.id,function(){
+						location.reload();
+					});
+				}
+			});
+			//监听头工具栏事件
+			layui.table.on("toolbar(customerTable)",function(obj){
+				switch(obj.event){
+				case 'add':
+					//打开添加窗口
+					let index=layer.open({
+						type:1,
+						title:"添加客户",
+						content:$("#addCustomerForm")
+					});
+					//初始化
+					$("#addCustomerForm button[type='reset']").click()
+					//监听表单提交事件
+					layui.form.on("submit(formDemo)",function(data){
+						$.post("/bookTicket/admin/add/customer",data.field,function(){
+							location.reload();
+						});
+						return false;
+					});
+					break;
+				case 'find':
+					let index2=layui.layer.prompt(function(value){
+						//查找用户
+						if(value.match(/^\d+$/)!=null){
+							layui.layer.close(index2);
+							$.get("/bookTicket/admin/get/customer/"+value,function(data){
+								if(data!=""){
+									//打开个人信息面板，先展示使用添加用户面板代替
+									let index3=layui.layer.open({
+										type:1,
+										title:"查看客户",
+										content:$("#addCustomerForm"),
+										end:function(){//将隐藏的按钮显示出来。。。。
+											$("#addCustomerForm button").css("display","inline-block");
+										}
+									})
+									//初始化
+				 					layui.form.val("addCustomerForm",{
+										name:data.name,
+										password:data.password,
+										sex:data.sex,
+										birthday:data.birthday,
+										phone:data.phone,
+										email:data.email
+									}); 
+									//隐藏提交重置表单..
+									$("#addCustomerForm button").css("display","none");	
+								}
+							});
+						}
+					});
+					break;
+				}
+			});
+		});
+		//用户登出
+		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		})
+	})
+</script>
+<style>
+.layui-nav-side{
+	top:60px;
+}
+.content{
+	margin:20px 20px 20px 220px;
+}
+#addCustomerForm{
+	padding:20px;
+} 
+</style>
+</head>
+<body>
+<ul class="layui-nav">
+	<li class="layui-nav-item"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<ul class="layui-nav layui-nav-tree layui-nav-side layui-bg-cyan">
+		<li class="layui-nav-item layui-this"><a href="customer_manage.html">客户管理</a></li>
+		<li class="layui-nav-item"><a href="movie_manage.html">影片管理</a></li>
+		<li class="layui-nav-item"><a href="room_manage.html">房间管理</a></li>
+		<li class="layui-nav-item"><a href="ticket_manage.html">影票管理</a></li>
+	</ul>
+	<div class="content">
+		<table id="customerTable" lay-filter="customerTable"></table>
+	</div>
+</div>
+
+<script type="text/html" id="barDemo">
+	<a class="layui-btn layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></a>
+	<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete"><i class="layui-icon layui-icon-delete"></i></a>
+</script>
+<script type="text/html" id="barDemo2">
+	<a class="layui-btn layui-btn-radius layui-btn-warm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i></a>
+	<a class="layui-btn layui-btn-radius layui-btn-warm" lay-event="find"><i class="layui-icon layui-icon-search"></i></a>
+</script>
+<script src="/bookTicket/layui/layui.js"></script>
+</body>
+<form id="addCustomerForm" lay-filter="addCustomerForm" class="layui-form" style="display:none">
+	<div class="layui-form-item">
+		<label class="layui-form-label">姓名</label>
+		<div class="layui-input-block">
+			<input type="text" name="name" class="layui-input" required autocomplete="off">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">密码</label>
+		<div class="layui-input-block">
+			<input type="password" name="password" class="layui-input" required autocomplete="new-password">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">性别</label>
+		<div class="layui-input-block">
+		  <input type="radio" name="sex" value="男" title="男" checked>
+		  <input type="radio" name="sex" value="女" title="女">
+		</div>
+	</div>
+		<div class="layui-form-item">
+		<label class="layui-form-label">生日</label>
+		<div class="layui-input-inline">
+			<input type="text" id="birthday" name="birthday" class="layui-input">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">电话号码</label>
+		<div class="layui-input-block">
+			<input type="number" name="phone" class="layui-input" autocomplete="off">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">电子邮箱</label>
+		<div class="layui-input-block">
+			<input type="email" name="email" class="layui-input"  autocomplete="email">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<div class="layui-input-block">
+			<button class="layui-btn" lay-submit lay-filter="formDemo">提交</button>
+      		<button type="reset" class="layui-btn">重置</button>
+		</div>
+	</div>
+</form>
+</html>

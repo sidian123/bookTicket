@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>影片管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission-admin.js"></script>
+<script>
+	$(function(){
+		layui.use(["element","table","laydate","form","upload"],function(){
+			let tdata={};//修改事件需要用到的变量
+			//渲染表格
+			layui.table.render({
+				elem:"#movieTable",
+				url:"/bookTicket/admin/get/movie",
+				parseData:function(res){
+					return {
+						"code":0,
+						"msg":"ok",
+						"count":100,
+						"data":res
+					};
+				},
+				height:400,
+				page:true,
+				toolbar:"#barDemo2",
+				cols:[[
+					{field:"id",title:"ID",sort:true,fixed:"left"},
+					{field:"name",title:"影名"},
+					{field:"kind",title:"类型"},
+					{field:"duration",title:"时长"},
+					{field:"introduction",title:"介绍"},
+					{fixed:"right",toolbar:"#barDemo"}
+				]]
+			});
+			//图片上传渲染
+	     	var uploadInst = layui.upload.render({
+			    elem: '#upload'
+			    ,url: '/bookTicket/admin/upload/'
+			    ,accept:"images"
+			    ,acceptMime:"image/*"
+			    ,size:5000
+			    ,choose: function(obj){
+			      //预读本地文件示例，不支持ie8
+			      obj.preview(function(index, file, result){
+			        $('#preview').attr('src', result); //图片链接（base64）
+			      });
+			    }
+	     		,done: function(res){
+	     	      //如果上传失败
+	     	      if(res.code > 0){
+	     	        return layer.msg('上传失败');
+	     	      }
+	     	      //上传成功
+	     	      tdata.image=res.filename;
+	     	    }
+		  	});
+			//监听行工具事件
+			layui.table.on("tool(movieTable)",function(obj){
+				data=obj.data;
+				if(obj.event==="edit"){
+					//打开编辑窗口
+					let index=layer.open({
+						type:1,
+						title:"修改电影",
+						content:$("#addMovieForm"),
+						end:function(){tdata={};}
+					});
+					//初始化值
+ 					layui.form.val("addMovieForm",{
+						"name":data.name,
+						"kind":data.kind,
+						"duration":data.duration,
+						"introduction":data.introduction
+					});
+					if(data.image!=null){
+						$("#preview").attr("src","/bookTicket/admin/download/"+data.image);	
+					}else{
+						$("#preview").attr("src","");
+					}
+ 					//监听表单提交事件
+ 					layui.form.on("submit(formDemo)",function(data2){
+ 					    data2.field.id=data.id;
+ 					    data2.field.image=tdata.image;
+ 					    $.post("/bookTicket/admin/update/movie",data2.field,function(){
+ 					    	location.reload();
+ 					    });
+ 					    layui.layer.close(index);
+ 						return false;
+ 					});
+				}else if(obj.event==="delete"){
+					$.get("/bookTicket/admin/delete/movie/"+obj.data.id,function(){
+						location.reload();
+					});
+				}
+			});
+			//监听头工具栏事件
+			layui.table.on("toolbar(movieTable)",function(obj){
+				switch(obj.event){
+				case 'add':
+					//打开添加窗口
+					let index=layer.open({
+						type:1,
+						title:"添加影片",
+						content:$("#addMovieForm"),
+						end:function(){tdata={};}
+					});
+					//初始化
+					$("#addMovieForm button[type='reset']").click()
+					$("#preview").attr("src","");
+					//监听表单提交事件
+					layui.form.on("submit(formDemo)",function(data){
+						data.field.image=tdata.image;
+						$.post("/bookTicket/admin/add/movie",data.field,function(){
+							location.reload();
+						});
+						return false;
+					});
+					break;
+				case 'find':
+					let index2=layui.layer.prompt(function(value){
+						//查找电影
+						if(value.match(/^\d+$/)!=null){
+							layui.layer.close(index2);
+							$.get("/bookTicket/admin/get/movie/"+value,function(data){
+								if(data!=""){
+									let index3=layui.layer.open({
+										type:1,
+										title:"查看影片",
+										content:$("#addMovieForm"),
+										end:function(){//将隐藏的按钮显示出来。。。。
+											$("#addMovieForm button").css("display","inline-block");
+										}
+									})
+									//初始化
+				 					layui.form.val("addMovieForm",{
+										"name":data.name,
+										"kind":data.kind,
+										"duration":data.duration,
+										"introduction":data.introduction
+									}); 
+									if(data.image!=null){
+										$("#preview").attr("src","/bookTicket/admin/download/"+data.image);	
+									}else{
+										$("#preview").attr("src","");
+									}
+									//隐藏提交重置表单..
+									$("#addMovieForm button").css("display","none");	
+								}
+							});
+						}
+					});
+					break;
+				}
+			});
+		});
+		//用户登出
+		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		})
+	})
+</script>
+<style>
+.layui-nav-side{
+	top:60px;
+}
+.content{
+	margin:20px 20px 20px 220px;
+}
+#addMovieForm{
+	padding:20px;
+	height:500px;
+} 
+.layui-upload{
+	text-align:center;
+}
+#preview{
+	width:100%;
+}
+</style>
+</head>
+<body>
+<ul class="layui-nav">
+	<li class="layui-nav-item"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<ul class="layui-nav layui-nav-tree layui-nav-side layui-bg-cyan">
+		<li class="layui-nav-item"><a href="customer_manage.html">客户管理</a></li>
+		<li class="layui-nav-item layui-this"><a href="movie_manage.html">影片管理</a></li>
+		<li class="layui-nav-item"><a href="room_manage.html">房间管理</a></li>
+		<li class="layui-nav-item"><a href="ticket_manage.html">影票管理</a></li>
+	</ul>
+	<div class="content">
+		<table id="movieTable" lay-filter="movieTable"></table>
+	</div>
+</div>
+
+
+<form id="addMovieForm" lay-filter="addMovieForm" class="layui-form" style="display:none">
+	<div class="layui-form-item">
+		<label class="layui-form-label">影名</label>
+		<div class="layui-input-block">
+			<input type="text" name="name" class="layui-input" required autocomplete="off">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">类型</label>
+		<div class="layui-input-block">
+			<select name="kind" required="required" class="layui-input">
+				<option value="喜剧">喜剧</option>
+				<option value="武侠">武侠</option>
+				<option value="爱情">爱情</option>
+				<option value="科幻">科幻</option>
+				<option value="动漫">动漫</option>
+				<option value="动作">动作</option>
+			</select>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">时长</label>
+		<div class="layui-input-block">
+			<input type="number" name="duration" required="required" class="layui-input" placeholder="单位分钟">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">介绍</label>
+		<div class="layui-input-block">
+			<textarea name="introduction"  class="layui-textarea"></textarea>
+		</div>
+	</div>
+	<div class="layui-upload">
+		<button type="button" class="layui-btn" id="upload">上传图片</button>
+		<div class="layui-upload-list">
+		  <img class="layui-upload-img" id="preview">
+		</div>
+	</div> 
+	<div class="layui-form-item">
+		<div class="layui-input-block">
+			<button class="layui-btn" lay-submit lay-filter="formDemo">提交</button>
+      		<button type="reset" class="layui-btn">重置</button>
+		</div>
+	</div>
+</form>
+
+
+<script type="text/html" id="barDemo">
+	<a class="layui-btn layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></a>
+	<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete"><i class="layui-icon layui-icon-delete"></i></a>
+</script>
+<script type="text/html" id="barDemo2">
+	<a class="layui-btn layui-btn-radius layui-btn-warm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i></a>
+	<a class="layui-btn layui-btn-radius layui-btn-warm" lay-event="find"><i class="layui-icon layui-icon-search"></i></a>
+</script>
+<script src="/bookTicket/layui/layui.js"></script>
+</body>
+</html>

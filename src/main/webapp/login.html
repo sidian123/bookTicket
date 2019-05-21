@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/css/login.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script>
+	$(function(){
+		//注册form登录事件
+		$("#login-button").click(function(event){
+			event.preventDefault();
+			$.post("/bookTicket/login",$("#loginForm").serialize(),function(data){
+				if(data.code==="200"){
+					$('.wrapper').addClass('form-success');
+					$('form').fadeOut(500,function(){
+						if(data.isAdmin==="true"){
+							location.replace("/bookTicket/admin");
+						}else{
+							location.replace("/bookTicket/");	
+						}
+					});
+				}else{
+					$("#hint").text(data.msg);
+				}
+			})
+		})
+	})
+</script>
+</head>
+<body>
+<div class="wrapper">
+	<div class="container">
+		<h1>Welcome</h1>
+		
+		<form class="form" id="loginForm">
+			<input type="text" placeholder="Username" required="required" name="id" autocomplete="off">
+			<input type="password" placeholder="Password" required="required" name="password" autocomplete="new-password">
+			<button type="submit" id="login-button">Login</button>
+		</form>
+		<p id="hint"></p>
+	</div>
+	
+	<ul class="bg-bubbles">
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+	</ul>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>订单详细</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/bookTicket/layui/css/layui.css">
+<script src="/bookTicket/js/jquery-3.3.1.min.js"></script>
+<script src="/bookTicket/js/permission.js"></script>
+<style>
+.layui-upload{
+	width: 200px;
+    margin: auto;
+}
+.layui-upload-img{
+	width:100%;
+}
+.content>p{
+    margin: 10px auto;
+    background-color: #ffeaea;
+    width: 400px;
+    min-width: 40%;
+    max-width: 100%;
+    text-align: center;
+    padding: 20px;
+}
+</style>
+</head>
+<body>
+<ul class="layui-nav" lay-filter="test">
+	<li class="layui-nav-item"><a href="/bookTicket/">首页</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/order">购票</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/admin/">后台管理</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html">登录</a></li>
+	<li class="layui-nav-item layui-this"><a href="/bookTicket/order/order_detail.html">个人订单</a></li>
+	<li class="layui-nav-item"><a href="/bookTicket/login.html" id="quit">退出</a></li>
+</ul>
+<div class="main">
+	<div class="content">
+	</div>
+</div>
+
+
+<script src="/bookTicket/layui/layui.all.js"></script>
+<script>
+	$(function(){
+ 		$("#quit").click(function(){
+			$.get("/bookTicket/loginout");
+		});
+		//获得登录用户
+		let user;
+ 		$.get("/bookTicket/get/user",function(data){
+ 			user=data;
+ 			if(data==null||data===""){
+ 				location.replace("/bookTicket/login.html");
+ 			}
+ 	 		//得到用户订单
+ 	 		$.get("/bookTicket/customer/get/order_detail/"+user.id,function(data){
+ 	 			for(let value of data){
+ 					let one="<p>"+
+ 								"电影:"+value.name+"<br>"+
+ 								"房间号:"+value.roomID+"<br>"+
+ 								"位置:第"+value.row+"行，第"+value.column+"列<br>"+
+ 								"价格:"+value.price+"<br>"+
+ 								"上映时间:"+value.playTime+"<br>"+
+ 								"购买时间:"+value.purchaseTime+"<br>"+
+ 							"</p>";
+ 					$(".content").append(one);
+ 	 			}
+ 	 		});
+ 		});
+	})
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

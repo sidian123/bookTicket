@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.team.bookTicket.dao.TicketDao">
+	<select id="findById" resultType="Ticket">
+		select *
+		from ticket
+		where id=#{id}		
+	</select>
+	<select id="all" resultType="Ticket">
+		select *
+		from ticket
+		<if test="offset !=null and count!=null">
+			limit #{offset},#{count}
+		</if>		
+	</select>
+	<select id="allAvailable" resultType="Ticket">
+		select *
+		from ticket
+		where playTime>now()
+		<if test="offset !=null and count!=null">
+			limit #{offset},#{count}
+		</if>
+	</select>
+	<!-- 将房间总票存入column，可用票存入row -->
+	<select id="allGroupByRoomID" resultType="Ticket">
+		select roomID,movieID,price,playTime,count(*) as `column`,sum(IF(purchaseTime is not null,1,0)) as `row`
+		from ticket
+		group by roomID,playTime
+		<if test="offset !=null and count!=null">
+			limit #{offset},#{count}
+		</if>
+	</select>
+	<select id="findByRoomId" resultType="Ticket">
+		select *
+		from ticket
+		where roomID=#{roomID}
+		<if test="offset !=null and count!=null">
+			limit #{offset},#{count}
+		</if>
+	</select>
+	<select id="findByMovieId" resultType="Ticket">
+		select *
+		from ticket
+		where movieID=#{movieID}
+		<if test="offset !=null and count!=null">
+			limit #{offset},#{count}
+		</if>
+	</select>
+	<select id="findByCustomerId" resultType="Ticket">
+		select *
+		from ticket
+		where customerID=#{customerID}
+		<if test="offset !=null and count!=null">
+			limit #{offset},#{count}
+		</if>
+	</select>
+	<select id="findOrder" resultType="OrderDetail">
+		select movie.name,roomID,`row`,`column`,price,playTime,purchaseTime
+		from ticket join movie on ticket.movieID=movie.id
+		where customerID=#{id}
+		order by purchaseTime desc
+	</select>
+	<select id="countPrice" resultType="double">
+		select sum(price)
+		from ticket
+		where purchaseTime>#{datetime}
+	</select>
+	<insert id="add" useGeneratedKeys="true" keyProperty="id">
+		insert
+		into ticket(roomID,movieID,customerID,`row`,`column`,price,playTime,purchaseTime)
+		values(#{roomID},#{movieID},#{customerID},#{row},#{column},#{price},#{playTime},#{purchaseTime})
+	</insert>
+	<delete id="delete">
+		delete
+		from ticket
+		where id=#{id}
+	</delete>
+	<delete id="deleteAllOfRoom">
+		delete
+		from ticket
+		where roomID=#{roomID}
+	</delete>
+	<update id="update">
+		update ticket
+		<set>
+			<if test="roomID !=null">roomID=#{roomID},</if>
+			<if test="movieID !=null">movieID=#{movieID},</if>
+			<if test="customerID !=null">customerID=#{customerID},</if>
+			<if test="row !=null">`row`=#{row},</if>
+			<if test="column !=null">`column`=#{column},</if>
+			<if test="price !=null">price=#{price},</if>
+			<if test="playTime !=null">playTime=#{playTime},</if>
+			<if test="purchaseTime !=null">purchaseTime=#{purchaseTime}</if>
+		</set>
+		where id=#{id}
+	</update>
+	<update id="update2">
+		update ticket
+		set customerID=#{customerID},
+			purchaseTime=now()
+		where roomID=#{roomID} and movieID=#{movieID} and `row`=#{row} and `column`=#{column} and playTime=#{playTime}
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

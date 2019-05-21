@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.team.bookTicket.dao.MovieDao">
+	<select id="findById" resultType="Movie">
+		select *
+		from movie
+		where id=#{id}
+	</select>
+	<select id="all" resultType="Movie">
+		select *
+		from movie
+		<if test="offset !=null and count!=null">
+			limit #{offset},#{count}
+		</if>
+	</select>
+	<select id="allAvailable" resultType="Movie">
+		select movie.*
+		from movie join ticket on movie.id=ticket.movieID
+		where playTime>now()
+	</select>
+	<select id="allAvailable2" resultType="Movie">
+		select distinct movie.*
+		from movie join ticket on movie.id=ticket.movieID
+		where playTime>now()
+	</select>
+	<insert id="add" useGeneratedKeys="true" keyProperty="id">
+		insert
+		into movie(name,kind,duration,introduction,image)
+		values(#{name},#{kind},#{duration},#{introduction},#{image})
+	</insert>
+	<delete id="delete">
+		delete
+		from movie
+		where id=#{id}
+	</delete>
+	<update id="update">
+		update movie
+		<set>
+			<if test="name !=null">name=#{name},</if>
+			<if test="kind !=null">kind=#{kind},</if>
+			<if test="duration !=null">duration=#{duration},</if>
+			<if test="introduction !=null">introduction=#{introduction},</if>
+			<if test="image !=null">image=#{image}</if>
+		</set>
+		where id=#{id}
+	</update>
+</mapper>
