@@ -10,6 +10,7 @@
 * 统计影片的收入。
 ## 数据库表结构
 ![](./images/database.png)
+> 注意, 图中并没有画出外键
 ## 使用语言、框架
 * 前端：html、css、javascript、layui、jquery
 * 后端：java、spring、spring mvc、mybatis
